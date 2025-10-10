@@ -1,0 +1,50 @@
+version: '3.8'
+
+
+services:
+  hands-on-data-warehouse:
+    image: mcr.microsoft.com/mssql/server:2025-latest
+    container_name: hands-on-data-warehouse
+    hostname: hands-on-data-warehouse
+
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=${DB_PASSWORD}
+      - MSSQL_PID=${PID}
+      - MSSQL_AGENT_ENABLED=true # Enable SQL Server Agent for jobs/scheduling
+      - MSSQL_MEMORY_LIMIT_MB=4096
+      - MSSQL_TCP_PORT=1433
+
+    ports:
+      - "1434:1433"
+
+    volumes:
+      - mssql_data:/var/opt/mssql
+      - mssql_logs:/var/opt/mssql/log 
+      - ./scripts:/scripts # Mount a local scripts directory for SQL files
+      - ./datasets:/datasets # Directory for CSV files
+      
+    restart: unless-stopped
+
+    networks:
+      - mssql-net
+
+    # If we ever need to control resources
+    # deploy:
+    #   resources:
+    #     limits:
+    #       memory: 4G
+    #       cpus: '2.0'
+    #   reservations:
+    #       memory: 2G
+    #       cpus: '1.0'
+
+volumes:
+  mssql_data:
+    driver: local
+  mssql_logs:
+    driver: local
+
+networks:
+  mssql-net:
+    driver: bridge
