@@ -1,11 +1,19 @@
 version: '3.8'
 
+# Podman Compose file for local MS SQL Server-based Data Warehouse project
 
 services:
   hands-on-data-warehouse:
     image: mcr.microsoft.com/mssql/server:2025-latest
     container_name: hands-on-data-warehouse
     hostname: hands-on-data-warehouse
+    init: true # better signal handling; graceful shutdown
+    stop_grace_period: 60s
+
+    labels:
+      - "project=hands-on-data-warehouse"
+      - "environment=development"
+      - "maintainer=Andrii Lesniak"
 
     environment:
       - ACCEPT_EULA=Y
@@ -23,7 +31,15 @@ services:
       - mssql_logs:/var/opt/mssql/log 
       - ./scripts:/scripts # Mount a local scripts directory for SQL files
       - ./datasets:/datasets # Directory for CSV files
-      
+
+    healthcheck:
+#       test: ["CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -U sa -P $${MSSQL_SA_PASSWORD} -Q 'SELECT 1' || exit 1"]
+      test: /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$${MSSQL_SA_PASSWORD}" -Q "SELECT 1 -С" || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 90s
+
     restart: unless-stopped
 
     networks:
